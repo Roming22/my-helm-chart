@@ -1,0 +1,54 @@
+{{ if .Values.openshift_pipelines }}
+---
+# Docs: https://github.com/tektoncd/operator/blob/main/docs/TektonConfig.md
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  targetNamespace: openshift-pipelines
+  profile: all
+  # params:
+  #   - name: createRbacResource
+  #     value: "false"
+  platforms:
+    openshift:
+      pipelinesAsCode:
+        enable: true
+  chain:
+    # Configure TaskRun attestation.
+    # RHTAP does not leverage the TaskRun attestations.
+    # This tells Tekton Chains to not store them in the OCI registry.
+    artifacts.taskrun.format: "in-toto"
+    artifacts.taskrun.storage: ""
+
+    # Configure image signing
+    artifacts.oci.storage: "oci"
+
+    # Configure PipelineRun attestation
+    artifacts.pipelinerun.format: "in-toto"
+    artifacts.pipelinerun.storage: "oci"
+
+    # Rekor integration is disabled for now. It is planned to be re-introduced in the future.
+    transparency.enabled: "false"
+  pipeline:
+    # default-service-account: appstudio-pipeline
+    enable-bundles-resolver: true
+    enable-cluster-resolver: true
+    enable-git-resolver: true
+    enable-hub-resolver: true
+    enable-tekton-oci-bundles: true
+    performance:
+      threads-per-controller: 32
+      kube-api-qps: 50
+      kube-api-burst: 50
+  pruner:
+    # Some resources have an ownerReference which prevents them from being deleted
+    # by tekton-results.
+    # Until this is fixed, the pruner will handle those resources.
+    # disabled: true
+    keep: 10
+    resources:
+      - pipelinerun
+    schedule: 0/5 * * * *
+{{ end }}
