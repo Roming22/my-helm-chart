@@ -3,6 +3,7 @@
 # Declare variables to be passed into your templates.
 
 environment: development
-
 openshift_gitops:
   version: latest
+openshift_pipelines:
+  version: 1.12
